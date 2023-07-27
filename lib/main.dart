@@ -1,13 +1,12 @@
-import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
+
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 import 'package:flutter/material.dart';
-
-//import 'dart:ffi' as ffi;
-import 'dart:io' show Platform, Directory;
-
-import 'package:path/path.dart' as path;
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 //ffi.Pointer<ffi.Int8>
@@ -23,11 +22,10 @@ import 'package:path/path.dart' as path;
 //函数声明
 late final int Function(int x, int y) funcAdd;
 late final Pointer<Int8> Function() opencvVersion;
+// late final Pointer<Int8> Function(int pixels,int w,int h) bitmap2Gray;
 
 
 void main() {
-
-
   runApp(const MyApp());
 }
 
@@ -63,6 +61,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String? _opencvVersion;
 
+  final _picker = ImagePicker();
+  late Image _srcImg;
+  late Image _dstImg;
+
+  initData() async {
+    // Uint8List _byte = await Cv2.threshold(
+    //   pathFrom: CVPathFrom.ASSETS,
+    //   pathString: 'assets/imgs/1.jpg',
+    //   thresholdValue: 150,
+    //   maxThresholdValue: 200,
+    //   thresholdType: Cv2.THRESH_BINARY,
+    // );
+    //
+    // _dstImg = Image.memory(_byte);
+    // setState(() {
+    //
+    // });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -76,12 +93,21 @@ class _MyHomePageState extends State<MyHomePage> {
     opencvVersion= _nativeAddLib.lookup<NativeFunction<Pointer<Int8> Function()>>('opencv_version').asFunction();
 
 
-    ///
+    /// get opencv version
     //Pointer<Int8> to String
     //https://blog.csdn.net/eieihihi/article/details/119152003
     Pointer<Int8> _ver = opencvVersion();
     _opencvVersion =  _ver.cast<Utf8>().toDartString();
     print("open ver:$_opencvVersion");
+
+
+    _srcImg = Image.asset("assets/imgs/1.jpg");
+    _dstImg = Image.asset("assets/imgs/1.jpg");
+
+
+    initData();
+
+
   }
 
 
@@ -111,40 +137,69 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text("flutter opencv mobile demo"),
+        title: Text("opencv ${_opencvVersion!}"),
       ),
-      body: Center(
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(0, 20, 0, 0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'opencv ver:${_opencvVersion}',
-            ),
-            
+
             Container(
-              height: 250,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Image.asset("assets/imgs/1.jpg"),
-
-                  Image.asset("assets/imgs/1.jpg"),
-                ],
-              )
-            ),
-
-            Container(
-              child: Column(
-                children: [
-                  ElevatedButton(onPressed: (){}, child: Text("二值化")),
+                  ElevatedButton(onPressed: (){
+                    print("二值化");
+                  }, child: Text("二值化")),
                   ElevatedButton(onPressed: (){}, child: Text("灰度化")),
                   ElevatedButton(onPressed: (){}, child: Text("高斯模糊")),
                 ],
               ),
-            )
+            ),
+            
+            Container(
+              //height: 250,
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () async {
+                      print("12");
+                      await _pickImageFromGallery();
+                    },
+                    child: _srcImg,
+                  ),
+
+                  SizedBox(height: 20,),
+
+                  _dstImg,
+                ],
+              )
+            ),
+
+
+
           ],
         ),
       ),
     );
+  }
+
+
+
+
+  ///
+  /// 从相册选择图片
+  ///
+  Future<void> _pickImageFromGallery() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      //setState(() => this._imageFile = File(pickedFile.path));
+      File _file = File(pickedFile.path);
+      _srcImg = Image.file(_file!);
+      _dstImg = Image.file(_file!);
+
+      setState(() {});
+    }
   }
 }

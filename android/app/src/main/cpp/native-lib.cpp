@@ -47,6 +47,25 @@ opencv_version() {
     return v;
 }
 
+/*
+//定义IntArray结构体
+typedef struct {
+    int32_t *data;
+    int32_t length;
+} IntArray;
+
+extern "C" IntArray *
+bitmap2Gray(const int32_t *intArray, int32_t length, int w,int h){
+
+    int ret[w*h];
+
+    Mat img(h, w, CV_8UC4, pixels);
+
+    cvtColor(img, img, CV_BGRA2GRAY);
+    cvtColor(img, img, CV_GRAY2BGRA);
+}
+*/
+
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_com_example_android_1opencv_1mobile_MainActivity_stringFromJNI(
