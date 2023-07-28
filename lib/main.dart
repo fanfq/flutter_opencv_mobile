@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'dart:ui' as ui;
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
@@ -24,6 +25,7 @@ late final int Function(int x, int y) funcAdd;
 late final Pointer<Int8> Function() opencvVersion;
 // late final Pointer<Int8> Function(int pixels,int w,int h) bitmap2Gray;
 
+late final Pointer<Int8> Function() getVersion;
 
 void main() {
   runApp(const MyApp());
@@ -78,6 +80,23 @@ class _MyHomePageState extends State<MyHomePage> {
     // setState(() {
     //
     // });
+
+    _srcImg = Image.asset("assets/imgs/1.jpg");
+    _dstImg = Image.asset("assets/imgs/1.jpg");
+
+    //asset file to Uint8List
+    final _temp = await rootBundle.load("assets/imgs/1.jpg");
+    Uint8List bytes = _temp.buffer.asUint8List();
+    ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    ui.FrameInfo frameInfo = await codec.getNextFrame();
+    ui.Image _img = frameInfo.image;
+
+    _dstImg = Image.memory(bytes);
+
+    setState(() {
+
+    });
+    //ui.Image uiBg = await ImageUtils.loadImageByProvider(AssetImage("images/pngbg512.png"));
   }
 
   @override
@@ -91,24 +110,36 @@ class _MyHomePageState extends State<MyHomePage> {
 
     funcAdd = _nativeAddLib.lookup<NativeFunction<Int32 Function(Int32, Int32)>>('native_add').asFunction();
     opencvVersion= _nativeAddLib.lookup<NativeFunction<Pointer<Int8> Function()>>('opencv_version').asFunction();
+    getVersion = _nativeAddLib.lookup<NativeFunction<Pointer<Int8> Function()>>('getVersion').asFunction();
 
 
     /// get opencv version
     //Pointer<Int8> to String
     //https://blog.csdn.net/eieihihi/article/details/119152003
-    Pointer<Int8> _ver = opencvVersion();
+    // Pointer<Int8> _ver = opencvVersion();
+    // _opencvVersion =  _ver.cast<Utf8>().toDartString();
+    // print("open ver:$_opencvVersion");
+
+
+    Pointer<Int8> _ver = getVersion();
     _opencvVersion =  _ver.cast<Utf8>().toDartString();
     print("open ver:$_opencvVersion");
 
 
-    _srcImg = Image.asset("assets/imgs/1.jpg");
-    _dstImg = Image.asset("assets/imgs/1.jpg");
 
 
     initData();
-
-
   }
+
+  Future<Uint8List?> _fun(ui.Image image) async {
+    ByteData? byteData = await image.toByteData();
+    if (byteData != null) {
+      Uint8List bytes = byteData.buffer.asUint8List();
+      return bytes;
+    }
+    return null;
+  }
+
 
 
   void _incrementCounter() {
